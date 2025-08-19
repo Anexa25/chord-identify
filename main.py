@@ -2,8 +2,7 @@ import tkinter as tk
 from tkinter import *
 
 root = tk.Tk()
-
-root.title("Chord identifier")
+root.title("Chord Identifier")
 root.minsize(200, 200)
 root.configure(background="#365347")
 
@@ -13,10 +12,6 @@ canvas.pack()
 
 canvas.create_text(710, 100, text="Chord Identifier", font=("Arial", 65), fill="black")
 bottom_text_id = canvas.create_text(710, 870, text="Click to place note", font=("Arial", 20), fill="black")
-
-
-
-
 
 # Fretboard creation
 fret_board = canvas.create_rectangle(0, 430, 1440, 800, fill="#6E5E4C", outline="#6E5E4C")
@@ -29,7 +24,6 @@ width_n = 7
 spacing = 40
 multiplier = 1.253
 x = 0
-
 
 # Adding the frets
 fret_positions = [0]  # include nut at x=0
@@ -56,48 +50,35 @@ string_letters = ["E", "A", "D", "G", "B", "e"]
 for i in range(6):
     canvas.create_text(1390, y_list[i], text=string_letters[i], font=("Arial", 30), fill="#4A4544")
 
-
-STRING_TUNING = ["E","A","D","G","B","E"]
-
+STRING_TUNING = ["E", "A", "D", "G", "B", "E"]
 NOTES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
-
-
-def get_note(string_index,fret_index):
-    open_note = STRING_TUNING[string_index]
-    note_index = NOTES.index(open_note)
-    STRING_TUNING = ["E","A","D","G","B","E"]
-
-NOTES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
-
-
-def get_note(string_index,fret_index):
-    open_note = STRING_TUNING[string_index]
-    note_index = NOTES.index(open_note)
-    
-    pressed_note_index = (note_index + fret_index) % 12
-    note = NOTES[pressed_note_index]
-    
- 
-    return note
-
-
-
-
-
-
-
-# Interactivity with snapping
-note_display_id = None
 
 dots = []
+pressed_notes_list = []  # Stores pressed notes for chord recognition
 
+# Define some basic chords
+CHORDS = {
+    "C major": {"C", "E", "G"},
+    "G major": {"G", "B", "D"},
+    "D major": {"D", "F#", "A"},
+    "A minor": {"A", "C", "E"},
+    # add more chords here as needed
+}
 
+note_display_id = None
 
+# Function to get note
+def get_note(string_index, fret_index):
+    open_note = STRING_TUNING[string_index]
+    note_index = NOTES.index(open_note)
+    pressed_note_index = (note_index + fret_index) % 12
+    return NOTES[pressed_note_index]
+
+# Click to place notes
 def on_click(event):
-    global note_display_id
-    r = 13  
+    global note_display_id, bottom_text_id, pressed_notes_list
+    r = 13
 
-    # Fretboard vertical limits
     fret_top = 480
     fret_bottom = 780
     string_count = 6
@@ -106,7 +87,6 @@ def on_click(event):
     if event.y < fret_top or event.y > fret_bottom:
         return
 
-    # Snap to nearest string
     string_index = round((event.y - fret_top) / string_spacing)
     string_index = max(0, min(string_count - 1, string_index))
     snapped_y = fret_top + string_index * string_spacing
@@ -124,19 +104,18 @@ def on_click(event):
     if event.x < fret_positions[0] or event.x > fret_positions[-1]:
         return
 
-    # Determine fret number 
+    # Determine fret number
     num_frets = len(fret_positions)
-    fret_index = 0  
+    fret_index = 0
     for i in range(num_frets - 1):
         if fret_positions[i] <= event.x < fret_positions[i + 1]:
-            fret_index = num_frets - 1 - i  
+            fret_index = num_frets - 1 - i
             break
     if event.x >= fret_positions[-1]:
-        fret_index = 1 
+        fret_index = 1
 
-    # Center dot in that fret
     if fret_index == 0:
-        snapped_x = fret_positions[0] / 2  
+        snapped_x = fret_positions[0] / 2
     else:
         left = fret_positions[num_frets - fret_index - 1]
         right = fret_positions[num_frets - fret_index]
@@ -149,50 +128,56 @@ def on_click(event):
     )
     dots.append(dot_id)
 
+    # Add note to pressed_notes_list
+    note_name = get_note(string_index, fret_index)
+    pressed_notes_list.append(note_name)
 
-    note_name = get_note(string_index,fret_index)
-
+    # Show last note pressed
     if note_display_id is None:
         note_display_id = canvas.create_text(710, 250, text=note_name, font=("Arial", 50), fill="white")
     else:
         canvas.itemconfig(note_display_id, text=note_name)
 
-    canvas.delete(bottom_text_id)
-    
-    
+    if bottom_text_id is not None:
+        canvas.delete(bottom_text_id)
+        bottom_text_id = None
 
+# Show chord when Done button is pressed
+def chord_rec(notes_list, chord_dict):
+    note_set = set(notes_list)
+    for chord_name, chord_notes in chord_dict.items():
+        if note_set == chord_notes:
+            return chord_name
+    return "Unknown Chord"
 
-
+def show_chord():
+    global note_display_id
+    chord_name = chord_rec(pressed_notes_list, CHORDS)
+    if note_display_id is None:
+        note_display_id = canvas.create_text(710, 250, text=chord_name, font=("Arial", 50), fill="white")
+    else:
+        canvas.itemconfig(note_display_id, text=chord_name)
 
 # Clear dots
 def clear_dots():
-    global note_display_id, bottom_text_id
+    global note_display_id, bottom_text_id, pressed_notes_list
     for dot in dots:
         canvas.delete(dot)
     dots.clear()
-    
+    pressed_notes_list.clear()
     if note_display_id is not None:
         canvas.itemconfig(note_display_id, text="-")
-        
-        
-    # Restore the bottom instruction text
     if bottom_text_id is not None:
         canvas.delete(bottom_text_id)
-        
     bottom_text_id = canvas.create_text(710, 870, text="Click to place note", font=("Arial", 20), fill="black")
-    
-
 
 canvas.bind("<Button-1>", on_click)
 
+# Buttons
 clear_button = tk.Button(root, text="Clear", command=clear_dots, padx=2, pady=2)
 canvas.create_window(1390, 870, window=clear_button)
 
-
-
-
-
-
-
+done_button = tk.Button(root, text="Done", command=show_chord, padx=2, pady=2)
+canvas.create_window(1190, 870, window=done_button)
 
 root.mainloop()
