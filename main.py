@@ -48,7 +48,6 @@ for i in range(10):
 
 
 
-
 # Adding the strings
 for i in range(6):
     y = 480 + i * string_spacing
