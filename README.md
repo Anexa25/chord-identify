@@ -18,6 +18,6 @@ Open the project folder in your IDE.
 Run main.py to access the virtual fretboard.
 
 To interact:
-Click on the fretboard to view notes.
-Select chord shapes and press 'Done' for the program to recognise them.
-Use 'clear' to reset the fretboard.
+- Click on the fretboard to view notes.
+- Select chord shapes and press 'Done' for the program to recognise them.
+- Use 'clear' to reset the fretboard.
